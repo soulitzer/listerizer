@@ -3,22 +3,45 @@ import assert from 'assert'
 import ItemObj from './ItemObj.class.js'
 import ListObj from './ListObj.class.js'
 
-const keyDownMap = {}
-
-document.addEventListener('keydown', (event) => {
-  const keyName = event.key;
-  keyDownMap[keyName] = true
-});
-document.addEventListener('keyup', (event) => {
-  const keyName = event.key;
-  keyDownMap[keyName] = false
-});
-
 class ListArea {
   constructor() {
     this.lists = [];
     this.selected = []; //ids
-    this.editMode = ""; //id of the element being editted
+    this.editMode = ""; //id of the element (list or item) being editted
+    this.newItemMode = ""; //id of list with new element being added
+    this.keyDownMap = {}; //Key down map
+    this.buffer = []; //Empty object
+    this.bufferType = "";
+    this.history = []; // History of past list states
+    this.currentStateIndex = 0; //Keep track of what the current history is
+  }
+
+  copySelectedToBuffer() {
+    this.buffer = []
+    this.lists.forEach((l)=>{
+      if(this.selected.includes(l.id)) {
+        this.buffer.push(l);
+      }
+    });
+    this.bufferType = "list"
+  }
+
+  pasteBuffer() {
+    var counter = 0
+    this.buffer.forEach((l)=>{
+      counter ++
+      const newList = new ListObj(l.name, counter)
+      l.list.forEach((i)=> {
+        counter++
+        newList.push(new ItemObj(i.name, i.frequency, counter))
+      })
+      this.lists.push(newList);
+    });
+  }
+
+  updateHistory() {
+    this.history.push(this.lists);
+    this.currentStateIndex++;
   }
 
   push(list) {
@@ -86,7 +109,7 @@ class ListArea {
   handleActions(action, entity, parameter, parameter2) {
     switch(action) {
       case "add_item":
-        this.addItem(entity, new ItemObj("test", "123"));
+        this.addItem(entity, parameter);
         break;
       case "remove_list":
         this.remove(entity);
@@ -95,7 +118,7 @@ class ListArea {
         const selected = this.selected;
         const beforeToggle = selected.includes(entity);
 
-        if(!keyDownMap.Shift) selected.length = 0;
+        if(!this.keyDownMap.Shift && !this.keyDownMap.Meta) selected.length = 0;
         if(beforeToggle) selected.splice(selected.indexOf(entity), 1);
         else selected.push(entity);
         break;
@@ -110,12 +133,15 @@ class ListArea {
         this.editMode = "";
         break;
       case "update_item_name":
-          this.updateItemName(parameter2, entity, parameter);
-          this.editMode = "";
-          break;
+        this.updateItemName(parameter2, entity, parameter);
+        this.editMode = "";
+        break;
+      case "paste_buffer":
+        this.pasteBuffer();
       default:
         break;
     }
+    this.updateHistory();
   } // handleActions
 } // ListArea
 

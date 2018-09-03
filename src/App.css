@@ -27,6 +27,8 @@
 
 .list-selected {
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.15);
+  position:relative;
+  bottom:1px;
 }
 
 .list-selected .list-header {
@@ -35,7 +37,7 @@
 
 .list-header {
   background-color:rgba(250, 50, 50, 0.2);
-  border-radius: 4px;
+  border-radius: 4px 4px 3px 3px;
   color:black;
 }
 
